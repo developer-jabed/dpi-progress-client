@@ -29,7 +29,7 @@ const DashboardMobileSidebar = ({
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-6">
         <Link href={dashboardHome}>
-          <span className="text-xl font-bold text-primary">DPI PROGRESS</span>
+          <span className="text-xl font-bold text-primary">Club Funding Management </span>
         </Link>
       </div>
       <SheetTitle className="sr-only">Navigation Menu</SheetTitle>

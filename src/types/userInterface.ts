@@ -4,5 +4,5 @@ export interface UserInfo {
     name: string;
     email: string;
     role: UserRole;
-    profilePhoto?: string; // optional, URL of user profile image
+
 }

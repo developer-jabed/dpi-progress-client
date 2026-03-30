@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { UserRole } from "@/lib/auth-utils";
 
 
@@ -7,13 +7,9 @@ export interface UserInfo {
     name: string;
     email: string;
     role: UserRole;
-    needPasswordChange: boolean;
-    status: "ACTIVE" | "INACTIVE" | "BANNED";
+    status: "ACTIVE" | "DELETED" | "BLOCKED";
     lastLogin: Date | null;
-    admin?: any;
-    cr?: any;
-    student?: any;
-    teacher?: any;
+
     createdAt: string;
     updatedAt: string;
 }

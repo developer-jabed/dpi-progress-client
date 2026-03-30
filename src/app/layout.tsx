@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Dpi Progress",
+  title: "Club Management System",
   description: "A Institution application built with Next.js",
 };
 

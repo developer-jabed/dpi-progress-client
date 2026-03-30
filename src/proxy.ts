@@ -6,10 +6,10 @@ import { getNewAccessToken } from './service/auth/auth.service';
 import { deleteCookie, getCookie } from './service/auth/tokenHandlers';
 import { getUserInfo } from './service/auth/getUserInfo';
 
+// ─── Bare role-root paths → redirect to default dashboard ────────────────────
+const ROLE_ROOT_PATHS = ["/dashboard", "/admin"];
 
-
-// This function can be marked `async` if using `await` inside
-export async function proxy(request: NextRequest) {
+async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const hasTokenRefreshedParam = request.nextUrl.searchParams.has('tokenRefreshed');
 
@@ -29,8 +29,6 @@ export async function proxy(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // const accessToken = request.cookies.get("accessToken")?.value || null;
-
     const accessToken = await getCookie("accessToken") || null;
 
     let userRole: UserRole | null = null;
@@ -47,69 +45,77 @@ export async function proxy(request: NextRequest) {
     }
 
     const routerOwner = getRouteOwner(pathname);
-    //path = /doctor/appointments => "DOCTOR"
-    //path = /my-profile => "COMMON"
-    //path = /login => null
+    const isAuth = isAuthRoute(pathname);
 
-    const isAuth = isAuthRoute(pathname)
-
-    // Rule 1 : User is logged in and trying to access auth route. Redirect to default dashboard
+    // Rule 1: User is logged in and trying to access auth route → default dashboard
     if (accessToken && isAuth) {
-        return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole as UserRole), request.url))
+        return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole as UserRole), request.url));
     }
 
-
-    // Rule 2 : User is trying to access open public route
-    if (routerOwner === null) {
-        return NextResponse.next();
-    }
-
-    // Rule 1 & 2 for open public routes and auth routes
-
-    if (!accessToken) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(loginUrl);
-    }
-
-    // Rule 3 : User need password change
-
+    // Rule 2: Logged-in user — check password change requirement
     if (accessToken) {
         const userInfo = await getUserInfo();
-        // if (userInfo.needPasswordChange) {
-        //     if (pathname !== "/reset-password") {
-        //         const resetPasswordUrl = new URL("/reset-password", request.url);
-        //         resetPasswordUrl.searchParams.set("redirect", pathname);
-        //         return NextResponse.redirect(resetPasswordUrl);
-        //     }
-        //     return NextResponse.next();
-        // }
+
+        if (userInfo?.needPasswordChange) {
+            if (pathname !== "/reset-password") {
+                const resetPasswordUrl = new URL("/reset-password", request.url);
+                resetPasswordUrl.searchParams.set("redirect", pathname);
+                return NextResponse.redirect(resetPasswordUrl);
+            }
+            return NextResponse.next();
+        }
 
         if (userInfo && !userInfo.needPasswordChange && pathname === '/reset-password') {
             return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole as UserRole), request.url));
         }
     }
 
-    // Rule 4 : User is trying to access common protected route
+    // Rule 3: Open public route → allow through
+    if (routerOwner === null) {
+        return NextResponse.next();
+    }
+
+    // Rule 4: Unauthenticated user on protected route → login
+    if (!accessToken) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // Rule 5: Common protected route → allow through
     if (routerOwner === "COMMON") {
         return NextResponse.next();
     }
 
-    // Rule 5 : User is trying to access role based protected route
-    if (routerOwner === "ADMIN" || routerOwner === "TEACHER" || routerOwner === "STUDENT") {
+    // Rule 6: Bare role-root paths → redirect to role default dashboard
+    // e.g. MEMBER typing /dashboard → /dashboard/member
+    // e.g. ADMIN  typing /admin     → /admin/dashboard
+    if (ROLE_ROOT_PATHS.includes(pathname)) {
+        return NextResponse.redirect(
+            new URL(getDefaultDashboardRoute(userRole as UserRole), request.url)
+        );
+    }
+
+    // Rule 7: Role-based route — wrong role → bounce to own dashboard
+    if (routerOwner === "ADMIN" || routerOwner === "MEMBER") {
         if (userRole !== routerOwner) {
-            return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole as UserRole), request.url))
+            return NextResponse.redirect(new URL(getDefaultDashboardRoute(userRole as UserRole), request.url));
         }
     }
+
+    console.log("pathname:", pathname);
+    console.log("routerOwner:", getRouteOwner(pathname));
+    console.log("accessToken:", !!accessToken);
+    console.log("userRole:", userRole);
 
     return NextResponse.next();
 }
 
-
+// ─── Export as `middleware` — required by Next.js ─────────────────────────────
+export { proxy };
 
 export const config = {
     matcher: [
-      
         '/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.well-known).*)',
     ],
-}
+};

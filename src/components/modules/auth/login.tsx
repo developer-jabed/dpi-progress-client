@@ -22,16 +22,11 @@ const LoginForm = ({ redirect }: { redirect?: string }) => {
   }, [state]);
 
   // Handler for auto-fill buttons
-  const handleAutoFill = (role: "teacher" | "cr" | "student" | "admin") => {
+  const handleAutoFill = (role: "member" | "admin") => {
     switch (role) {
-      case "teacher":
-        setFormData({ email: "hasan.teacher@example.com", password: "TeacherPass123" });
-        break;
-      case "cr":
-        setFormData({ email: "cr5.student@example.com", password: "CrPass123" });
-        break;
-      case "student":
-        setFormData({ email: "rahim.student22@example.com", password: "StudentPass123" });
+      
+      case "member":
+        setFormData({ email: "member1@gmail.com", password: "jabed1780" });
         break;
       case "admin":
         setFormData({ email: "jabed1780@gmail.com", password: "jabed1780" });
@@ -75,14 +70,9 @@ const LoginForm = ({ redirect }: { redirect?: string }) => {
 
         {/* Auto-fill Buttons */}
         <div className="flex gap-2 mt-2">
-          <Button type="button" onClick={() => handleAutoFill("teacher")}>
-            Teacher
-          </Button>
-          <Button type="button" onClick={() => handleAutoFill("cr")}>
-            CR
-          </Button>
-          <Button type="button" onClick={() => handleAutoFill("student")}>
-            Student
+       
+          <Button type="button" onClick={() => handleAutoFill("member")}>
+            member
           </Button>
           <Button type="button" onClick={() => handleAutoFill("admin")}>
             Admin
